@@ -1,0 +1,35 @@
+spring.application.name=almoxarifado-api
+server.port=8080
+
+# ---------------------------------------------------------------------
+# Banco de dados MySQL
+# Crie o banco antes de rodar a aplicacao:
+#   CREATE DATABASE almoxarifado CHARACTER SET utf8mb4;
+# Ajuste usuario/senha conforme seu ambiente.
+# ---------------------------------------------------------------------
+spring.datasource.url=jdbc:mysql://localhost:3306/almoxarifado?useSSL=false&serverTimezone=America/Sao_Paulo&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=COLOQUE_SUA_SENHA_AQUI
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+# "update" cria/ajusta as tabelas automaticamente a partir das entidades.
+# Em producao definitiva, prefira "validate" e controlar o schema via migrations (Flyway/Liquibase).
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.defer-datasource-initialization=true
+spring.jpa.open-in-view=false
+
+# data.sql roda sempre; na primeira execucao cria os dados de exemplo e o usuario admin.
+# Depois que o banco ja tiver dados reais da empresa, mude para "never" para nao tentar reinserir.
+spring.sql.init.mode=always
+
+# ---------------------------------------------------------------------
+# JWT
+# IMPORTANTE: troque este segredo antes de usar em producao (use uma string
+# longa e aleatoria, por exemplo gerada com `openssl rand -base64 48`),
+# e prefira definir via variavel de ambiente JWT_SECRET em vez de deixar no arquivo.
+# ---------------------------------------------------------------------
+jwt.secret=${JWT_SECRET:troque-este-segredo-por-uma-chave-longa-e-aleatoria-antes-de-usar-em-producao}
+jwt.expiracao-horas=8
