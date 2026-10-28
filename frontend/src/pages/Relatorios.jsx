@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api, mensagemDeErro } from '../api/api.js'
 import Filtros from '../components/Filtros.jsx'
 import {
@@ -12,7 +13,10 @@ const RELATORIOS = [
 ]
 
 export default function Relatorios() {
-  const [aba, setAba] = useState('estoque')
+  const [params, setParams] = useSearchParams()
+  const tipo = params.get('tipo')
+  const aba = RELATORIOS.some((r) => r.id === tipo) ? tipo : 'estoque'
+  const setAba = (id) => setParams({ tipo: id })
   return (
     <>
       <header className="topbar">

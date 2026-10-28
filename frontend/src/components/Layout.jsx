@@ -4,19 +4,128 @@ import { api, mensagemDeErro } from '../api/api.js'
 import Modal from './Modal.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 
-// Abas principais. "ativo" lista os prefixos de rota que mantêm a aba marcada
-// (Fornecedores e Categorias ficam dentro de Materiais).
+// Menu em árvore (como um explorador de arquivos). Cada grupo abre/fecha pela setinha;
+// "ativo" lista os prefixos de rota que mantêm o grupo marcado e aberto.
 const navItems = [
-  { to: '/', label: 'Painel', end: true, icon: IconGrid, ativo: ['/'] },
-  { to: '/materiais', label: 'Materiais', icon: IconBox, ativo: ['/materiais', '/fornecedores', '/categorias'] },
-  { to: '/movimentacao', label: 'Movimentação', icon: IconArrows, ativo: ['/movimentacao', '/documentos'] },
-  { to: '/relatorios', label: 'Relatórios', icon: IconReport, ativo: ['/relatorios'] },
+  { id: 'painel', to: '/', label: 'Painel', end: true, icon: IconGrid },
+  {
+    id: 'materiais', label: 'Materiais', icon: IconBox, to: '/materiais',
+    ativo: ['/materiais', '/fornecedores', '/categorias'],
+    filhos: [
+      { to: '/materiais', label: 'Materiais' },
+      { to: '/fornecedores', label: 'Fornecedores' },
+      { to: '/categorias', label: 'Categorias' },
+    ],
+  },
+  {
+    id: 'movimentacao', label: 'Movimentação', icon: IconArrows, to: '/movimentacao',
+    ativo: ['/movimentacao', '/documentos'],
+    filhos: [
+      { to: '/movimentacao', label: 'Visão geral', end: true },
+      { to: '/movimentacao/entrada', label: 'Criar entrada' },
+      { to: '/movimentacao/saida', label: 'Saída para consumo' },
+      { to: '/movimentacao/emprestimos', label: 'Empréstimos' },
+      { to: '/movimentacao/baixa', label: 'Perda ou avaria' },
+    ],
+  },
+  {
+    id: 'relatorios', label: 'Relatórios', icon: IconReport, to: '/relatorios',
+    ativo: ['/relatorios'],
+    filhos: [
+      { to: '/relatorios?tipo=estoque', label: 'Posição de estoque', tipo: 'estoque' },
+      { to: '/relatorios?tipo=movimentacoes', label: 'Movimentações', tipo: 'movimentacoes' },
+      { to: '/relatorios?tipo=emprestimos', label: 'Empréstimos', tipo: 'emprestimos' },
+    ],
+  },
 ]
+
+const CHAVE_ABERTOS = 'almoxarifado_menu_abertos'
+
+function lerAbertos() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_ABERTOS) || 'null')
+    if (Array.isArray(salvo)) return salvo
+  } catch (_) { /* sem armazenamento: usa o padrão */ }
+  return ['materiais', 'movimentacao']
+}
+
+function noGrupo(item, pathname) {
+  return item.ativo.some((p) => pathname === p || pathname.startsWith(p + '/'))
+}
+
+function MenuArvore({ pathname, search, admin }) {
+  const [abertos, setAbertos] = useState(lerAbertos)
+
+  // Ao navegar para dentro de um grupo (por link ou atalho), ele se abre sozinho.
+  useEffect(() => {
+    const atual = navItems.find((i) => i.filhos && noGrupo(i, pathname))
+    if (atual) setAbertos((a) => (a.includes(atual.id) ? a : [...a, atual.id]))
+  }, [pathname])
+
+  useEffect(() => {
+    try { localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(abertos)) } catch (_) { /* ignora */ }
+  }, [abertos])
+
+  const alternar = (id) => setAbertos((a) => (a.includes(id) ? a.filter((x) => x !== id) : [...a, id]))
+
+  return (
+    <nav className="sidebar-nav" aria-label="Menu principal">
+      {navItems.map((item) => {
+        if (!item.filhos) {
+          return (
+            <NavLink key={item.id} to={item.to} end={item.end}
+              className={() => (pathname === item.to ? 'active' : '')}>
+              <item.icon className="icon" />
+              {item.label}
+            </NavLink>
+          )
+        }
+        const aberto = abertos.includes(item.id)
+        const ativo = noGrupo(item, pathname)
+        return (
+          <div key={item.id} className="tree-group">
+            <div className={`tree-head${ativo ? ' active' : ''}`}>
+              <NavLink to={item.to} className="tree-label" onClick={() => !aberto && alternar(item.id)}>
+                <item.icon className="icon" />
+                {item.label}
+              </NavLink>
+              <button type="button" className={`tree-toggle${aberto ? ' open' : ''}`}
+                aria-expanded={aberto} aria-label={`${aberto ? 'Recolher' : 'Expandir'} ${item.label}`}
+                onClick={() => alternar(item.id)}>
+                <IconChevron />
+              </button>
+            </div>
+            {aberto && (
+              <div className="tree-children">
+                {item.filhos.map((f) => {
+                  const marcado = f.tipo
+                    ? pathname === '/relatorios' && (new URLSearchParams(search).get('tipo') || 'estoque') === f.tipo
+                    : f.end ? pathname === f.to : pathname === f.to || pathname.startsWith(f.to + '/')
+                  return (
+                    <NavLink key={f.to} to={f.to} className={() => `tree-child${marcado ? ' active' : ''}`}>
+                      {f.label}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+      {admin && (
+        <NavLink to="/usuarios" className={() => (pathname === '/usuarios' ? 'active' : '')}>
+          <IconUser className="icon" />
+          Usuários
+        </NavLink>
+      )}
+    </nav>
+  )
+}
 
 export default function Layout() {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const [senhaAberta, setSenhaAberta] = useState(false)
   const [senhaForm, setSenhaForm] = useState({ senhaAtual: '', novaSenha: '', confirmar: '' })
   const [senhaErro, setSenhaErro] = useState('')
@@ -59,25 +168,7 @@ export default function Layout() {
         <div className="sidebar-brand">
           <div className="mark">{usuario?.empresaNome || 'Almoxarifado'}</div>
         </div>
-        <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={() => ((item.end ? pathname === '/' : item.ativo.some((p) => pathname === p || pathname.startsWith(p + '/'))) ? 'active' : '')}
-            >
-              <item.icon className="icon" />
-              {item.label}
-            </NavLink>
-          ))}
-          {usuario?.papel === 'ADMIN' && (
-            <NavLink to="/usuarios" className={({ isActive }) => (isActive ? 'active' : '')}>
-              <IconUser className="icon" />
-              Usuários
-            </NavLink>
-          )}
-        </nav>
+        <MenuArvore pathname={pathname} search={search} admin={usuario?.papel === 'ADMIN'} />
         <div className="sidebar-footer">
           <div style={{ color: '#C7C4B8', fontWeight: 600, marginBottom: 2 }}>{usuario?.nome}</div>
           <div style={{ marginBottom: 12 }}>{usuario?.papel === 'ADMIN' ? 'Administrador' : 'Operador'}</div>
@@ -128,6 +219,14 @@ export default function Layout() {
         </Modal>
       )}
     </div>
+  )
+}
+
+function IconChevron(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="14" height="14" {...props}>
+      <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 

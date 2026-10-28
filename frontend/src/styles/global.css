@@ -772,3 +772,54 @@ tbody tr:hover { background: #FBFAF6; }
   .form-grid { grid-template-columns: 1fr; }
   .content { padding-left: 16px; padding-right: 16px; }
 }
+
+/* ---------- Menu lateral em árvore (expande/recolhe) ---------- */
+
+.tree-group { display: flex; flex-direction: column; }
+
+.tree-head {
+  display: flex;
+  align-items: stretch;
+  border-radius: 3px;
+  border-left: 3px solid transparent;
+}
+.tree-head:hover { background: #262B2F; }
+.tree-head.active { background: #2C3136; border-left-color: var(--accent); }
+
+.sidebar-nav .tree-label {
+  flex: 1;
+  border-left: none;
+  background: transparent !important;
+}
+.tree-head.active .tree-label { color: #fff; }
+
+.tree-toggle {
+  width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #9A9F93;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.tree-toggle:hover { color: #fff; }
+.tree-toggle svg { transition: transform 0.15s ease; }
+.tree-toggle.open svg { transform: rotate(90deg); }
+
+.tree-children {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 6px 21px;
+  padding-left: 10px;
+  border-left: 1px solid #3A4046;
+}
+.sidebar-nav .tree-child {
+  padding: 7px 10px;
+  font-size: 13.5px;
+  border-left: none;
+  color: #A9A99D;
+}
+.sidebar-nav .tree-child:hover { color: #fff; background: #262B2F; }
+.sidebar-nav .tree-child.active { color: #fff; background: #2C3136; font-weight: 600; border-left: none; }
