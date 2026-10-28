@@ -53,12 +53,16 @@ public class GlobalExceptionHandler {
                            String duplicidade) { }
 
     private static final Map<String, Recurso> RECURSOS = Map.of(
-            "fornecedores", new Recurso("este fornecedor", "materiais", "ele",
+            "fornecedores", new Recurso("este fornecedor", "materiais ou movimentações", "ele",
                     "Já existe um fornecedor com estes dados."),
             "categorias", new Recurso("esta categoria", "materiais", "ela",
                     "Já existe uma categoria com este nome."),
             "materiais", new Recurso("este material", "movimentações de estoque", "ele",
-                    "Já existe um material com este código."),
+                    "Já existe este material com a mesma marca, modelo e C.A."),
+            "emprestimos", new Recurso("este empréstimo", "devoluções", "ele",
+                    "Esta operação já foi registrada."),
+            "movimentacoes", new Recurso("esta movimentação", "registros", "ela",
+                    "Esta operação já foi registrada."),
             "usuarios", new Recurso("este usuário", "registros", "ele",
                     "Já existe um usuário com este nome de usuário.")
     );

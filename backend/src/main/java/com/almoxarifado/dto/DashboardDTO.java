@@ -16,6 +16,8 @@ public class DashboardDTO {
     private List<Movimentacao> ultimasMovimentacoes;
     private long itensPerdidosMes;
     private BigDecimal valorPerdidoMes;
+    private long emprestimosAbertos;
+    private long emprestimosAtrasados;
 
     public long getTotalMateriais() { return totalMateriais; }
     public void setTotalMateriais(long totalMateriais) { this.totalMateriais = totalMateriais; }
@@ -43,4 +45,10 @@ public class DashboardDTO {
 
     public BigDecimal getValorPerdidoMes() { return valorPerdidoMes; }
     public void setValorPerdidoMes(BigDecimal valorPerdidoMes) { this.valorPerdidoMes = valorPerdidoMes; }
+
+    public long getEmprestimosAbertos() { return emprestimosAbertos; }
+    public void setEmprestimosAbertos(long emprestimosAbertos) { this.emprestimosAbertos = emprestimosAbertos; }
+
+    public long getEmprestimosAtrasados() { return emprestimosAtrasados; }
+    public void setEmprestimosAtrasados(long emprestimosAtrasados) { this.emprestimosAtrasados = emprestimosAtrasados; }
 }

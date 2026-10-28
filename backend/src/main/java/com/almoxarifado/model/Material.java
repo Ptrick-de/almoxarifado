@@ -1,5 +1,6 @@
 package com.almoxarifado.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -8,15 +9,21 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Cada linha representa uma VARIAÇÃO do produto (marca + modelo + C.A.).
+ * O "código" identifica o produto e é compartilhado entre as variações;
+ * o identificador único da variação é o id interno (e a combinação
+ * código + marca + modelo + C.A. + empresa não pode se repetir).
+ */
 @Entity
-@Table(name = "materiais", uniqueConstraints = @UniqueConstraint(columnNames = {"codigo", "empresa_id"}))
+@Table(name = "materiais", uniqueConstraints =
+        @UniqueConstraint(name = "uk_material_variacao", columnNames = {"codigo", "marca", "modelo", "ca", "empresa_id"}))
 public class Material {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Código é obrigatório")
     @Column(nullable = false)
     private String codigo;
 
@@ -25,6 +32,15 @@ public class Material {
     private String nome;
 
     private String descricao;
+
+    @Column(nullable = false, length = 80, columnDefinition = "varchar(80) not null default ''")
+    private String marca = "";
+
+    @Column(nullable = false, length = 80, columnDefinition = "varchar(80) not null default ''")
+    private String modelo = "";
+
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30) not null default ''")
+    private String ca = "";
 
     @NotBlank(message = "Unidade de medida é obrigatória")
     private String unidade;
@@ -48,19 +64,18 @@ public class Material {
     @Column(name = "data_cadastro")
     private LocalDateTime dataCadastro = LocalDateTime.now();
 
+    /** Inativar preserva o histórico: o material deixa de aceitar novas movimentações. */
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    private boolean ativo = true;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "categoria_id")
     @JsonIgnoreProperties({"materiais", "empresa"})
     private Categoria categoria;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "fornecedor_id")
-    @JsonIgnoreProperties({"materiais", "empresa"})
-    private Fornecedor fornecedor;
-
-    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "empresa_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     private Empresa empresa;
 
     public Long getId() { return id; }
@@ -74,6 +89,15 @@ public class Material {
 
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
+
+    public String getMarca() { return marca; }
+    public void setMarca(String marca) { this.marca = marca == null ? "" : marca; }
+
+    public String getModelo() { return modelo; }
+    public void setModelo(String modelo) { this.modelo = modelo == null ? "" : modelo; }
+
+    public String getCa() { return ca; }
+    public void setCa(String ca) { this.ca = ca == null ? "" : ca; }
 
     public String getUnidade() { return unidade; }
     public void setUnidade(String unidade) { this.unidade = unidade; }
@@ -93,11 +117,11 @@ public class Material {
     public LocalDateTime getDataCadastro() { return dataCadastro; }
     public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }
 
+    public boolean isAtivo() { return ativo; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
     public Categoria getCategoria() { return categoria; }
     public void setCategoria(Categoria categoria) { this.categoria = categoria; }
-
-    public Fornecedor getFornecedor() { return fornecedor; }
-    public void setFornecedor(Fornecedor fornecedor) { this.fornecedor = fornecedor; }
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }

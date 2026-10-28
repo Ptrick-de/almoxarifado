@@ -4,7 +4,10 @@ import com.almoxarifado.dto.DashboardDTO;
 import com.almoxarifado.model.Material;
 import com.almoxarifado.model.Movimentacao;
 import com.almoxarifado.model.Usuario;
+import com.almoxarifado.model.Emprestimo;
+import com.almoxarifado.model.StatusEmprestimo;
 import com.almoxarifado.repository.CategoriaRepository;
+import com.almoxarifado.repository.EmprestimoRepository;
 import com.almoxarifado.repository.FornecedorRepository;
 import com.almoxarifado.repository.MaterialRepository;
 import com.almoxarifado.repository.MovimentacaoRepository;
@@ -24,15 +27,18 @@ public class DashboardController {
     private final CategoriaRepository categoriaRepository;
     private final FornecedorRepository fornecedorRepository;
     private final MovimentacaoRepository movimentacaoRepository;
+    private final EmprestimoRepository emprestimoRepository;
 
     public DashboardController(MaterialRepository materialRepository,
                                 CategoriaRepository categoriaRepository,
                                 FornecedorRepository fornecedorRepository,
-                                MovimentacaoRepository movimentacaoRepository) {
+                                MovimentacaoRepository movimentacaoRepository,
+                                EmprestimoRepository emprestimoRepository) {
         this.materialRepository = materialRepository;
         this.categoriaRepository = categoriaRepository;
         this.fornecedorRepository = fornecedorRepository;
         this.movimentacaoRepository = movimentacaoRepository;
+        this.emprestimoRepository = emprestimoRepository;
     }
 
     @GetMapping
@@ -58,6 +64,9 @@ public class DashboardController {
         dto.setValorTotalEstoque(valorTotal);
         dto.setMateriaisEstoqueBaixo(estoqueBaixo);
         dto.setUltimasMovimentacoes(ultimasLimitadas);
+        List<Emprestimo> abertos = emprestimoRepository.findAllByEmpresaIdAndStatus(empresaId, StatusEmprestimo.ATIVO);
+        dto.setEmprestimosAbertos(abertos.size());
+        dto.setEmprestimosAtrasados(abertos.stream().filter(e -> "ATRASADO".equals(e.getSituacao())).count());
         return dto;
     }
 }

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { api, mensagemDeErro } from '../api/api.js'
 import Modal from '../components/Modal.jsx'
 import { useConfirmacao } from '../components/ConfirmDialog.jsx'
+import AbasSecao, { ABAS_MATERIAIS } from '../components/AbasSecao.jsx'
+import { moeda } from '../utils/formatos.js'
 
 const VAZIO = { nome: '', cnpj: '', telefone: '', email: '', endereco: '' }
 
@@ -12,6 +14,8 @@ export default function Fornecedores() {
   const [modalAberto, setModalAberto] = useState(false)
   const [editando, setEditando] = useState(null)
   const [form, setForm] = useState(VAZIO)
+  const [busca, setBusca] = useState('')
+  const [vinculos, setVinculos] = useState(null) // { fornecedor, itens }
 
   useEffect(() => { carregar() }, [])
 
@@ -38,6 +42,18 @@ export default function Fornecedores() {
     } catch (e2) { setErro(mensagemDeErro(e2)) }
   }
 
+  async function verMateriais(f) {
+    setErro('')
+    try {
+      const itens = await api.listarMateriaisDoFornecedor(f.id)
+      setVinculos({ fornecedor: f, itens })
+    } catch (e) { setErro(mensagemDeErro(e)) }
+  }
+
+  const termo = busca.trim().toLowerCase()
+  const visiveis = fornecedores.filter((f) =>
+    !termo || [f.nome, f.cnpj, f.telefone, f.email].join(' ').toLowerCase().includes(termo))
+
   async function excluir(f) {
     if (!(await confirmar({
       titulo: 'Excluir fornecedor',
@@ -60,15 +76,19 @@ export default function Fornecedores() {
         </div>
         <button className="btn btn-primary" onClick={abrirNovo}>+ Novo fornecedor</button>
       </header>
+      <AbasSecao abas={ABAS_MATERIAIS} />
 
       <div className="content">
         {erro && !modalAberto && <div className="error-banner">{erro}</div>}
+        <div className="search-bar">
+          <input placeholder="Buscar por nome, CNPJ, telefone ou e-mail..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
         <div className="panel">
           <div className="panel-body">
-            {fornecedores.length === 0 ? (
+            {visiveis.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-title">Nenhum fornecedor cadastrado</div>
-                Cadastre as empresas que fornecem materiais.
+                <div className="empty-title">{fornecedores.length === 0 ? 'Nenhum fornecedor cadastrado' : 'Nenhum fornecedor encontrado'}</div>
+                {fornecedores.length === 0 ? 'Cadastre as empresas que fornecem materiais.' : 'Ajuste a busca para ver mais resultados.'}
               </div>
             ) : (
               <table>
@@ -76,7 +96,7 @@ export default function Fornecedores() {
                   <tr><th>Nome</th><th>CNPJ</th><th>Telefone</th><th>E-mail</th><th></th></tr>
                 </thead>
                 <tbody>
-                  {fornecedores.map((f) => (
+                  {visiveis.map((f) => (
                     <tr key={f.id}>
                       <td>{f.nome}</td>
                       <td className="mono">{f.cnpj || '—'}</td>
@@ -84,6 +104,7 @@ export default function Fornecedores() {
                       <td>{f.email || '—'}</td>
                       <td>
                         <div className="row-actions">
+                          <button className="btn btn-secondary btn-sm" onClick={() => verMateriais(f)}>Materiais e preços</button>
                           <button className="btn btn-secondary btn-sm" onClick={() => abrirEdicao(f)}>Editar</button>
                           <button className="btn btn-danger btn-sm" onClick={() => excluir(f)}>Excluir</button>
                         </div>
@@ -128,6 +149,33 @@ export default function Fornecedores() {
               <button type="submit" className="btn btn-primary">{editando ? 'Salvar alterações' : 'Cadastrar fornecedor'}</button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {vinculos && (
+        <Modal title={`Materiais de ${vinculos.fornecedor.nome}`} onClose={() => setVinculos(null)} larg>
+          {vinculos.itens.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-title">Nenhum material vinculado</div>
+              Associe este fornecedor no cadastro do material ou ao registrar uma entrada.
+            </div>
+          ) : (
+            <table>
+              <thead><tr><th>Código</th><th>Material</th><th>Marca / modelo</th><th>C.A.</th><th>Preço unitário</th></tr></thead>
+              <tbody>
+                {vinculos.itens.map((i) => (
+                  <tr key={i.materialId}>
+                    <td className="mono">{i.codigo}</td><td>{i.nome}</td>
+                    <td>{[i.marca, i.modelo].filter(Boolean).join(' / ') || '—'}</td>
+                    <td>{i.ca || '—'}</td><td>{moeda(i.precoUnitario)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => setVinculos(null)}>Fechar</button>
+          </div>
         </Modal>
       )}
 

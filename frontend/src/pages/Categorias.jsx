@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, mensagemDeErro } from '../api/api.js'
 import Modal from '../components/Modal.jsx'
+import AbasSecao, { ABAS_MATERIAIS } from '../components/AbasSecao.jsx'
 import { useConfirmacao } from '../components/ConfirmDialog.jsx'
 
 const VAZIO = { nome: '', descricao: '' }
@@ -55,6 +56,7 @@ export default function Categorias() {
         </div>
         <button className="btn btn-primary" onClick={abrirNovo}>+ Nova categoria</button>
       </header>
+      <AbasSecao abas={ABAS_MATERIAIS} />
 
       <div className="content">
         {erro && !modalAberto && <div className="error-banner">{erro}</div>}

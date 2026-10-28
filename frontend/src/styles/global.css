@@ -576,3 +576,199 @@ tbody tr:hover { background: #FBFAF6; }
   font-size: 13px;
   color: var(--ink-soft);
 }
+
+
+/* ---------- Abas de seção (Materiais / Movimentação) ---------- */
+
+.subtabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  overflow-x: auto;
+}
+
+.subtabs a {
+  padding: 11px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.subtabs a:hover { color: var(--ink); }
+.subtabs a.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* ---------- Filtros ---------- */
+
+.filtros {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.filtros .field label { font-size: 11.5px; }
+.filtros .field input, .filtros .field select { padding: 8px 10px; }
+
+.filtros-acoes {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.filtros-contagem { margin-left: auto; font-size: 12.5px; color: var(--ink-soft); }
+
+/* ---------- Badges adicionais ---------- */
+
+.badge-emprestimo { background: #E3ECF7; color: #2A5A94; }
+.badge-devolucao { background: #E1F1F0; color: #23706B; }
+.badge-muted { background: #ECE9DF; color: var(--ink-soft); }
+
+/* ---------- Formulários em seções ---------- */
+
+.form-section {
+  padding: 18px 20px 4px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.form-section + .form-grid { padding-top: 10px; }
+
+.field-hint { font-size: 12px; color: var(--ink-soft); }
+.field input[readonly] { background: #F0EDE3; color: var(--ink-soft); }
+.field .check { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.field .check input { width: auto; }
+
+.fornecedor-linha {
+  display: grid;
+  grid-template-columns: 1fr 150px auto;
+  gap: 10px;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.info-banner {
+  margin: 16px 20px 0;
+  padding: 10px 14px;
+  background: #E3ECF7;
+  color: #2A5A94;
+  border-radius: 4px;
+  font-size: 13.5px;
+}
+
+/* ---------- Detalhes (consulta de material) ---------- */
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px 20px;
+  padding: 16px 20px;
+}
+
+.detail-item .rotulo {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ink-soft);
+  margin-bottom: 3px;
+}
+
+.detail-item .valor { font-size: 14.5px; }
+.detail-item .valor.grande { font-family: var(--font-display); font-size: 26px; font-weight: 600; line-height: 1.1; }
+
+.modal.modal-largo { max-width: 960px; width: 96vw; }
+
+.texto-pequeno { font-size: 12.5px; color: var(--ink-soft); }
+.linha-material small { display: block; color: var(--ink-soft); font-size: 12px; }
+
+.acoes-pagina { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Documentos (Ficha de Entrega / Termo de Empréstimo) ---------- */
+
+.doc-barra {
+  display: flex;
+  gap: 10px;
+  padding: 16px 36px;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-folha {
+  background: #fff;
+  color: #000;
+  max-width: 820px;
+  margin: 24px auto;
+  padding: 40px 48px;
+  border: 1px solid var(--line);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.doc-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  border-bottom: 2px solid #000;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.doc-empresa { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+.doc-titulo { font-family: var(--font-display); font-size: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-align: right; }
+.doc-numero { font-family: var(--font-mono); font-size: 13px; text-align: right; }
+
+.doc-tabela { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+.doc-tabela th, .doc-tabela td { border: 1px solid #000; padding: 7px 10px; text-align: left; font-size: 13.5px; vertical-align: top; }
+.doc-tabela th { background: #EDEDED; width: 32%; font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 13px; color: #000; }
+
+.doc-tabela.horizontal th { width: auto; }
+
+.doc-secao { font-weight: 700; text-transform: uppercase; font-size: 12.5px; letter-spacing: 0.5px; margin: 18px 0 6px; }
+.doc-texto { text-align: justify; margin-bottom: 10px; }
+
+.doc-assinaturas { display: flex; gap: 48px; margin-top: 64px; }
+.doc-assinatura { flex: 1; text-align: center; font-size: 13px; }
+.doc-assinatura .linha { border-top: 1px solid #000; padding-top: 6px; }
+
+.doc-rodape { margin-top: 28px; font-size: 11.5px; color: #444; text-align: center; }
+
+@media print {
+  @page { margin: 14mm; }
+  html, body { background: #fff !important; }
+  .sidebar, .no-print, .doc-barra, .topbar, .modal-backdrop { display: none !important; }
+  .app-shell { display: block !important; }
+  .doc-folha { border: none; margin: 0; padding: 0; max-width: none; }
+}
+
+@media (max-width: 900px) {
+  .subtabs { padding: 0 16px; }
+  .fornecedor-linha { grid-template-columns: 1fr 120px auto; }
+  .doc-folha { padding: 20px; }
+  .doc-assinaturas { flex-direction: column; gap: 40px; }
+}
+
+/* Evita estouro horizontal em telas estreitas (selects com texto longo, grades de formulário) */
+.form-grid > *, .filtros-grid > * { min-width: 0; }
+.field input, .field select, .field textarea { max-width: 100%; min-width: 0; }
+@media (max-width: 700px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .content { padding-left: 16px; padding-right: 16px; }
+}

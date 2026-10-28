@@ -29,7 +29,7 @@ public class Fornecedor {
 
     @OneToMany(mappedBy = "fornecedor")
     @JsonIgnore
-    private List<Material> materiais;
+    private List<MaterialFornecedor> vinculos;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

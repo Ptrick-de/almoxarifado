@@ -7,6 +7,8 @@ const ROTULO_TIPO = {
   SAIDA: { badge: 'badge-saida', label: 'Saída' },
   PERDA: { badge: 'badge-perda', label: 'Perda' },
   AVARIA: { badge: 'badge-avaria', label: 'Avaria' },
+  EMPRESTIMO: { badge: 'badge-emprestimo', label: 'Empréstimo' },
+  DEVOLUCAO: { badge: 'badge-devolucao', label: 'Devolução' },
 }
 
 export default function Dashboard() {
@@ -46,9 +48,9 @@ export default function Dashboard() {
                 <div className="shortcut-title">Materiais</div>
                 <div className="shortcut-desc">Consultar e cadastrar itens</div>
               </Link>
-              <Link to="/movimentacoes" className="shortcut-card">
+              <Link to="/movimentacao" className="shortcut-card">
                 <div className="shortcut-title">Movimentações</div>
-                <div className="shortcut-desc">Registrar entradas e saídas</div>
+                <div className="shortcut-desc">Entradas, saídas, empréstimos e baixas</div>
               </Link>
               <Link to="/categorias" className="shortcut-card">
                 <div className="shortcut-title">Categorias</div>
@@ -59,6 +61,14 @@ export default function Dashboard() {
                 <div className="shortcut-desc">Gerenciar fornecedores</div>
               </Link>
             </div>
+
+            {dados.emprestimosAbertos > 0 && (
+              <div className={dados.emprestimosAtrasados > 0 ? 'error-banner' : 'info-banner'} style={{ margin: '0 0 20px' }}>
+                {dados.emprestimosAbertos} {dados.emprestimosAbertos === 1 ? 'empréstimo em aberto' : 'empréstimos em aberto'}
+                {dados.emprestimosAtrasados > 0 && <> — <strong>{dados.emprestimosAtrasados} em atraso</strong></>}.{' '}
+                <Link to="/movimentacao/emprestimos" style={{ textDecoration: 'underline' }}>Ver empréstimos</Link>
+              </div>
+            )}
 
             <div className="panel">
               <div className="panel-header">
@@ -105,7 +115,7 @@ export default function Dashboard() {
             <div className="panel">
               <div className="panel-header">
                 <h2>Últimas movimentações</h2>
-                <Link to="/movimentacoes" className="tag-pill">Ver histórico completo</Link>
+                <Link to="/movimentacao" className="tag-pill">Ver histórico completo</Link>
               </div>
               <div className="panel-body">
                 {dados.ultimasMovimentacoes.length === 0 ? (

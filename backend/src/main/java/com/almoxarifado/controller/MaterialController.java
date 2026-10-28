@@ -1,14 +1,11 @@
 package com.almoxarifado.controller;
 
-import com.almoxarifado.exception.RecursoNaoEncontradoException;
-import com.almoxarifado.exception.RegraDeNegocioException;
-import com.almoxarifado.model.Categoria;
-import com.almoxarifado.model.Fornecedor;
+import com.almoxarifado.dto.MaterialDTO;
+import com.almoxarifado.dto.MaterialRequest;
 import com.almoxarifado.model.Material;
 import com.almoxarifado.model.Usuario;
-import com.almoxarifado.repository.CategoriaRepository;
-import com.almoxarifado.repository.FornecedorRepository;
 import com.almoxarifado.repository.MaterialRepository;
+import com.almoxarifado.service.MaterialService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,25 +17,39 @@ import java.util.List;
 @RequestMapping("/api/materiais")
 public class MaterialController {
 
+    private final MaterialService materialService;
     private final MaterialRepository materialRepository;
-    private final CategoriaRepository categoriaRepository;
-    private final FornecedorRepository fornecedorRepository;
 
-    public MaterialController(MaterialRepository materialRepository,
-                               CategoriaRepository categoriaRepository,
-                               FornecedorRepository fornecedorRepository) {
+    public MaterialController(MaterialService materialService, MaterialRepository materialRepository) {
+        this.materialService = materialService;
         this.materialRepository = materialRepository;
-        this.categoriaRepository = categoriaRepository;
-        this.fornecedorRepository = fornecedorRepository;
     }
 
+    /** Lista com filtros combináveis: busca geral, código, nome, marca, modelo, C.A., fornecedor, categoria e situação. */
     @GetMapping
-    public List<Material> listar(@RequestParam(required = false) String busca, Authentication authentication) {
-        Long empresaId = empresaId(authentication);
-        if (busca != null && !busca.isBlank()) {
-            return materialRepository.buscarPorNomeOuCodigo(empresaId, busca);
-        }
-        return materialRepository.findAllByEmpresaIdOrderByNome(empresaId);
+    public List<MaterialDTO> listar(@RequestParam(required = false) String busca,
+                                    @RequestParam(required = false) String codigo,
+                                    @RequestParam(required = false) String nome,
+                                    @RequestParam(required = false) String marca,
+                                    @RequestParam(required = false) String modelo,
+                                    @RequestParam(required = false) String ca,
+                                    @RequestParam(required = false) String fornecedor,
+                                    @RequestParam(required = false) Long fornecedorId,
+                                    @RequestParam(required = false) Long categoriaId,
+                                    @RequestParam(required = false) String situacao,
+                                    Authentication authentication) {
+        MaterialService.Filtro f = new MaterialService.Filtro();
+        f.busca = busca;
+        f.codigo = codigo;
+        f.nome = nome;
+        f.marca = marca;
+        f.modelo = modelo;
+        f.ca = ca;
+        f.fornecedor = fornecedor;
+        f.fornecedorId = fornecedorId;
+        f.categoriaId = categoriaId;
+        f.situacao = situacao;
+        return materialService.listar(empresaId(authentication), f);
     }
 
     @GetMapping("/estoque-baixo")
@@ -47,86 +58,25 @@ public class MaterialController {
     }
 
     @GetMapping("/{id}")
-    public Material buscarPorId(@PathVariable Long id, Authentication authentication) {
-        return buscarDaMesmaEmpresa(id, authentication);
+    public MaterialDTO buscarPorId(@PathVariable Long id, Authentication authentication) {
+        return materialService.obter(id, empresaId(authentication));
     }
 
     @PostMapping
-    public ResponseEntity<Material> criar(@Valid @RequestBody Material material, Authentication authentication) {
-        Usuario logado = usuarioLogado(authentication);
-        if (materialRepository.existsByCodigoAndEmpresaId(material.getCodigo(), logado.getEmpresa().getId())) {
-            throw new RegraDeNegocioException("Já existe um material com o código " + material.getCodigo());
-        }
-        material.setEmpresa(logado.getEmpresa());
-        vincularRelacionamentos(material, logado.getEmpresa().getId());
-        Material salvo = materialRepository.save(material);
-        return ResponseEntity.ok(salvo);
+    public ResponseEntity<MaterialDTO> criar(@Valid @RequestBody MaterialRequest request, Authentication authentication) {
+        return ResponseEntity.ok(materialService.criar(request, usuarioLogado(authentication)));
     }
 
     @PutMapping("/{id}")
-    public Material atualizar(@PathVariable Long id, @Valid @RequestBody Material dados, Authentication authentication) {
-        Usuario logado = usuarioLogado(authentication);
-        Material material = buscarDaMesmaEmpresa(id, authentication);
-
-        materialRepository.findByCodigoAndEmpresaId(dados.getCodigo(), logado.getEmpresa().getId()).ifPresent(existente -> {
-            if (!existente.getId().equals(id)) {
-                throw new RegraDeNegocioException("Já existe um material com o código " + dados.getCodigo());
-            }
-        });
-
-        material.setCodigo(dados.getCodigo());
-        material.setNome(dados.getNome());
-        material.setDescricao(dados.getDescricao());
-        material.setUnidade(dados.getUnidade());
-        material.setQuantidadeAtual(dados.getQuantidadeAtual());
-        material.setQuantidadeMinima(dados.getQuantidadeMinima());
-        material.setPrecoUnitario(dados.getPrecoUnitario());
-        material.setLocalizacao(dados.getLocalizacao());
-        material.setCategoria(dados.getCategoria());
-        material.setFornecedor(dados.getFornecedor());
-        vincularRelacionamentos(material, logado.getEmpresa().getId());
-
-        return materialRepository.save(material);
+    public MaterialDTO atualizar(@PathVariable Long id, @Valid @RequestBody MaterialRequest request,
+                                 Authentication authentication) {
+        return materialService.atualizar(id, request, empresaId(authentication));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id, Authentication authentication) {
-        Material material = buscarDaMesmaEmpresa(id, authentication);
-        materialRepository.deleteById(material.getId());
+        materialService.excluir(id, empresaId(authentication));
         return ResponseEntity.noContent().build();
-    }
-
-    private Material buscarDaMesmaEmpresa(Long id, Authentication authentication) {
-        Material material = materialRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Material não encontrado: " + id));
-        if (!material.getEmpresa().getId().equals(empresaId(authentication))) {
-            throw new RecursoNaoEncontradoException("Material não encontrado: " + id);
-        }
-        return material;
-    }
-
-    private void vincularRelacionamentos(Material material, Long empresaId) {
-        if (material.getCategoria() != null && material.getCategoria().getId() != null) {
-            Categoria categoria = categoriaRepository.findById(material.getCategoria().getId())
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada"));
-            if (!categoria.getEmpresa().getId().equals(empresaId)) {
-                throw new RecursoNaoEncontradoException("Categoria não encontrada");
-            }
-            material.setCategoria(categoria);
-        } else {
-            material.setCategoria(null);
-        }
-
-        if (material.getFornecedor() != null && material.getFornecedor().getId() != null) {
-            Fornecedor fornecedor = fornecedorRepository.findById(material.getFornecedor().getId())
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Fornecedor não encontrado"));
-            if (!fornecedor.getEmpresa().getId().equals(empresaId)) {
-                throw new RecursoNaoEncontradoException("Fornecedor não encontrado");
-            }
-            material.setFornecedor(fornecedor);
-        } else {
-            material.setFornecedor(null);
-        }
     }
 
     private Usuario usuarioLogado(Authentication authentication) {

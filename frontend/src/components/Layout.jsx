@@ -1,20 +1,22 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { api, mensagemDeErro } from '../api/api.js'
 import Modal from './Modal.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 
+// Abas principais. "ativo" lista os prefixos de rota que mantêm a aba marcada
+// (Fornecedores e Categorias ficam dentro de Materiais).
 const navItems = [
-  { to: '/', label: 'Painel', end: true, icon: IconGrid },
-  { to: '/materiais', label: 'Materiais', icon: IconBox },
-  { to: '/movimentacoes', label: 'Movimentações', icon: IconArrows },
-  { to: '/categorias', label: 'Categorias', icon: IconTag },
-  { to: '/fornecedores', label: 'Fornecedores', icon: IconTruck },
+  { to: '/', label: 'Painel', end: true, icon: IconGrid, ativo: ['/'] },
+  { to: '/materiais', label: 'Materiais', icon: IconBox, ativo: ['/materiais', '/fornecedores', '/categorias'] },
+  { to: '/movimentacao', label: 'Movimentação', icon: IconArrows, ativo: ['/movimentacao', '/documentos'] },
+  { to: '/relatorios', label: 'Relatórios', icon: IconReport, ativo: ['/relatorios'] },
 ]
 
 export default function Layout() {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [senhaAberta, setSenhaAberta] = useState(false)
   const [senhaForm, setSenhaForm] = useState({ senhaAtual: '', novaSenha: '', confirmar: '' })
   const [senhaErro, setSenhaErro] = useState('')
@@ -63,7 +65,7 @@ export default function Layout() {
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => (isActive ? 'active' : '')}
+              className={() => ((item.end ? pathname === '/' : item.ativo.some((p) => pathname === p || pathname.startsWith(p + '/'))) ? 'active' : '')}
             >
               <item.icon className="icon" />
               {item.label}
@@ -164,6 +166,16 @@ function IconArrows(props) {
     <svg viewBox="0 0 24 24" fill="none" {...props}>
       <path d="M4 8H17L14 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M20 16H7L10 19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconReport(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M6 3H14L19 8V21H6V3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M14 3V8H19" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M9 13H16M9 17H14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }

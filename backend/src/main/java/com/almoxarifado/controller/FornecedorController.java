@@ -3,7 +3,11 @@ package com.almoxarifado.controller;
 import com.almoxarifado.exception.RecursoNaoEncontradoException;
 import com.almoxarifado.model.Fornecedor;
 import com.almoxarifado.model.Usuario;
+import com.almoxarifado.model.MaterialFornecedor;
 import com.almoxarifado.repository.FornecedorRepository;
+import com.almoxarifado.repository.MaterialFornecedorRepository;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,9 +20,31 @@ import java.util.List;
 public class FornecedorController {
 
     private final FornecedorRepository fornecedorRepository;
+    private final MaterialFornecedorRepository vinculoRepository;
 
-    public FornecedorController(FornecedorRepository fornecedorRepository) {
+    public FornecedorController(FornecedorRepository fornecedorRepository,
+                                MaterialFornecedorRepository vinculoRepository) {
         this.fornecedorRepository = fornecedorRepository;
+        this.vinculoRepository = vinculoRepository;
+    }
+
+    /** Materiais (variações) que o fornecedor atende, com o preço de cada um. */
+    @GetMapping("/{id}/materiais")
+    public List<Map<String, Object>> materiaisDoFornecedor(@PathVariable Long id, Authentication authentication) {
+        Fornecedor fornecedor = buscarDaMesmaEmpresa(id, authentication);
+        List<Map<String, Object>> lista = new java.util.ArrayList<>();
+        for (MaterialFornecedor v : vinculoRepository.findAllByFornecedorIdAndEmpresaId(fornecedor.getId(), empresaId(authentication))) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("materialId", v.getMaterial().getId());
+            item.put("codigo", v.getMaterial().getCodigo());
+            item.put("nome", v.getMaterial().getNome());
+            item.put("marca", v.getMaterial().getMarca());
+            item.put("modelo", v.getMaterial().getModelo());
+            item.put("ca", v.getMaterial().getCa());
+            item.put("precoUnitario", v.getPrecoUnitario());
+            lista.add(item);
+        }
+        return lista;
     }
 
     @GetMapping
@@ -52,6 +78,13 @@ public class FornecedorController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id, Authentication authentication) {
         Fornecedor fornecedor = buscarDaMesmaEmpresa(id, authentication);
+        int vinculados = vinculoRepository.findAllByFornecedorIdAndEmpresaId(fornecedor.getId(), empresaId(authentication)).size();
+        if (vinculados > 0) {
+            throw new com.almoxarifado.exception.RegraDeNegocioException(
+                    "Não foi possível excluir o fornecedor " + fornecedor.getNome() + " porque ele está vinculado a "
+                    + vinculados + (vinculados == 1 ? " material" : " materiais")
+                    + ". Remova o vínculo no cadastro dos materiais para poder excluí-lo.");
+        }
         fornecedorRepository.deleteById(fornecedor.getId());
         return ResponseEntity.noContent().build();
     }

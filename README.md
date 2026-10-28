@@ -2,7 +2,39 @@
 
 Aplicação de controle de estoque multiempresa, com backend em **Java + Spring Boot** e frontend em **React**. Login por **usuário e senha** (sem e-mail), banco **MySQL**, e sem identidade visual fixa — cada empresa vê apenas seus próprios dados.
 
-## O que mudou nesta versão
+## Materiais, Movimentação e Relatórios (versão atual)
+
+O menu lateral tem três áreas principais — **Materiais**, **Movimentação** e **Relatórios** — além do Painel e de Usuários (admin).
+
+- **Materiais** (abas: Materiais · Fornecedores · Categorias): cadastro com código automático, marca, modelo, C.A., fornecedores com preço, botão **Consultar Material** e filtros por código, nome, marca, modelo, C.A., fornecedor e situação.
+- **Movimentação** (abas: Visão geral · Criar entrada · Saída para consumo · Empréstimos · Perda ou avaria): cada operação tem tela própria, com histórico filtrável por material, responsável, tipo e período. Os quatro botões antigos (Entrada/Saída/Perda/Avaria) saíram da tela de histórico; o endpoint `POST /api/movimentacoes` continua sendo usado por essas telas.
+- **Relatórios**: posição de estoque, movimentações e empréstimos, com filtros, exportação CSV e impressão.
+- **Documentos**: *Ficha de Entrega de Material* (após cada saída para consumo) e *Termo de Empréstimo* (na tela de empréstimos). Abrem em página própria; o botão **Imprimir / Salvar em PDF** usa o diálogo de impressão do navegador (escolha "Salvar como PDF"). Não há geração de PDF no servidor.
+
+### Decisões de regra de negócio
+
+| Tema | Decisão |
+|---|---|
+| Código do material | Gerado pelo sistema (`MAT-001`, `MAT-002`...). O código identifica o **produto**. Se já existe material com o mesmo nome, o novo cadastro reaproveita o código; o botão de nova variação também reaproveita. O código nunca muda depois de criado. |
+| Variações | Cada linha de `materiais` é uma **variação** (marca + modelo + C.A.) com estoque próprio. A unicidade é `código + marca + modelo + C.A. + empresa` (`uk_material_variacao`); a chave real é o `id`. Mesmo produto com marcas diferentes mantém o mesmo código. |
+| Fornecedores e preços | Relação N:N na tabela `material_fornecedores` (um preço por fornecedor e variação). Uma entrada com fornecedor e preço atualiza esse preço e o preço de referência do material. |
+| Saldo e empréstimo | `quantidade_atual` é o que está **disponível no almoxarifado**. Empréstimo subtrai do saldo uma única vez; devolução soma de volta. Total = disponível + emprestado. Não existe conceito de reserva (aparece sempre 0). |
+| Situação | Indisponível (cadastro inativo) · Emprestado (saldo 0 e há itens emprestados) · Sem estoque · Estoque baixo (saldo ≤ mínimo) · Disponível. |
+| Empréstimo | Data prevista obrigatória; devolução parcial permitida; "Atrasado" é calculado (ativo com data prevista vencida), não gravado. |
+| Saldo inicial | Informado só no cadastro (gera uma entrada "saldo inicial" no histórico); depois o saldo só muda por movimentação. |
+| Exclusão | Material ou fornecedor com vínculos/histórico não é excluído (mensagem amigável). Para tirar um material de uso, inative-o: o histórico é preservado. |
+| Duplicidade | Cada formulário envia uma chave de operação; reenviar a mesma não lança de novo. Operações rodam em transação, com bloqueio do material para evitar saldo negativo em acessos simultâneos. |
+
+### Mudanças no banco (aplicadas automaticamente)
+
+- `materiais`: novas colunas `marca`, `modelo`, `ca`, `ativo`; a unicidade `(codigo, empresa_id)` foi trocada por `uk_material_variacao`.
+- Novas tabelas: `material_fornecedores` e `emprestimos`.
+- `movimentacoes`: novas colunas `destinatario`, `setor`, `fornecedor_id`, `preco_unitario`, `emprestimo_id`, `saldo_apos`, `chave_idempotencia`; tipos `EMPRESTIMO` e `DEVOLUCAO`; `tipo` vira texto e `observacao` passa a 1000 caracteres.
+- Banco já existente: ao iniciar, `MigracaoBanco` remove a unicidade antiga, converte `tipo` de ENUM para texto e copia o fornecedor único de cada material para `material_fornecedores`, sem perder dados. Os exemplos novos do `data.sql` (variações do mesmo código) só entram depois dessa migração, isto é, a partir da segunda inicialização.
+
+---
+
+## Versão anterior: multiempresa e login
 
 - **Multiempresa**: os dados (materiais, categorias, fornecedores, movimentações, usuários) agora pertencem a uma empresa específica. Uma empresa nunca vê ou acessa dados de outra — inclusive tentando adivinhar IDs na URL, a API responde "não encontrado".
 - **Login por usuário, não e-mail**: o campo agora é um nome de usuário livre (ex: `joao.silva`), sem precisar ser um e-mail.

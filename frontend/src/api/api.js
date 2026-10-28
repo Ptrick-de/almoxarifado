@@ -89,6 +89,15 @@ async function requisitar(caminho, opcoes = {}) {
   }
 }
 
+function montarQueryApi(filtros) {
+  const p = new URLSearchParams()
+  Object.entries(filtros || {}).forEach(([k, v]) => {
+    if (v !== '' && v !== null && v !== undefined) p.append(k, v)
+  })
+  const s = p.toString()
+  return s ? `?${s}` : ''
+}
+
 export const api = {
   // Autenticação
   login: (usuario, senha) => requisitar('/auth/login', { method: 'POST', body: JSON.stringify({ usuario, senha }) }),
@@ -103,7 +112,8 @@ export const api = {
   excluirUsuario: (id) => requisitar(`/usuarios/${id}`, { method: 'DELETE' }),
 
   // Materiais
-  listarMateriais: (busca) => requisitar(`/materiais${busca ? `?busca=${encodeURIComponent(busca)}` : ''}`),
+  // Aceita texto (busca geral) ou objeto de filtros: busca, codigo, nome, marca, modelo, ca, fornecedorId, categoriaId, situacao
+  listarMateriais: (filtros) => requisitar(`/materiais${montarQueryApi(typeof filtros === 'string' ? { busca: filtros } : filtros)}`),
   buscarMaterial: (id) => requisitar(`/materiais/${id}`),
   criarMaterial: (dados) => requisitar('/materiais', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarMaterial: (id, dados) => requisitar(`/materiais/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
@@ -117,15 +127,24 @@ export const api = {
   excluirCategoria: (id) => requisitar(`/categorias/${id}`, { method: 'DELETE' }),
 
   // Fornecedores
+  listarMateriaisDoFornecedor: (id) => requisitar(`/fornecedores/${id}/materiais`),
   listarFornecedores: () => requisitar('/fornecedores'),
   criarFornecedor: (dados) => requisitar('/fornecedores', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarFornecedor: (id, dados) => requisitar(`/fornecedores/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   excluirFornecedor: (id) => requisitar(`/fornecedores/${id}`, { method: 'DELETE' }),
 
-  // Movimentacoes
-  listarMovimentacoes: () => requisitar('/movimentacoes'),
+  // Movimentacoes (filtros: materialId, busca, responsavel, tipo, fornecedorId, de, ate)
+  listarMovimentacoes: (filtros) => requisitar(`/movimentacoes${montarQueryApi(filtros)}`),
+  buscarMovimentacao: (id) => requisitar(`/movimentacoes/${id}`),
   listarMovimentacoesPorMaterial: (materialId) => requisitar(`/movimentacoes/material/${materialId}`),
   registrarMovimentacao: (dados) => requisitar('/movimentacoes', { method: 'POST', body: JSON.stringify(dados) }),
+
+  // Empréstimos (filtros: materialId, busca, pessoa, setor, situacao, de, ate)
+  listarEmprestimos: (filtros) => requisitar(`/emprestimos${montarQueryApi(filtros)}`),
+  buscarEmprestimo: (id) => requisitar(`/emprestimos/${id}`),
+  historicoEmprestimo: (id) => requisitar(`/emprestimos/${id}/historico`),
+  registrarEmprestimo: (dados) => requisitar('/emprestimos', { method: 'POST', body: JSON.stringify(dados) }),
+  registrarDevolucao: (id, dados) => requisitar(`/emprestimos/${id}/devolucoes`, { method: 'POST', body: JSON.stringify(dados) }),
 
   // Dashboard
   buscarDashboard: () => requisitar('/dashboard'),
