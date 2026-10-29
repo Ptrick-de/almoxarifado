@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,8 @@ import java.util.List;
  * Nenhuma restrição de integridade é removida além da antiga UNIQUE(codigo, empresa_id), que impedia
  * cadastrar o mesmo produto com marcas diferentes e foi substituída por UNIQUE(codigo, marca, modelo, ca, empresa).
  */
+/** Só roda no MySQL real; os testes automatizados (perfil "test") usam um banco novo em memória. */
+@Profile("!test")
 @Component
 public class MigracaoBanco implements ApplicationRunner {
 

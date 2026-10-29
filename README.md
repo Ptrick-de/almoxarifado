@@ -25,6 +25,20 @@ O menu lateral tem três áreas principais — **Materiais**, **Movimentação**
 | Exclusão | Material ou fornecedor com vínculos/histórico não é excluído (mensagem amigável). Para tirar um material de uso, inative-o: o histórico é preservado. |
 | Duplicidade | Cada formulário envia uma chave de operação; reenviar a mesma não lança de novo. Operações rodam em transação, com bloqueio do material para evitar saldo negativo em acessos simultâneos. |
 
+### Testes automatizados (backend)
+
+Rodam em um banco H2 em memória (não precisam do MySQL nem do `application.properties`):
+
+```bash
+cd backend
+mvn test
+```
+
+- `MaterialDTOTest`: cálculo de situação (Disponível, Estoque baixo, Sem estoque, Emprestado, Indisponível) e totais.
+- `MovimentacaoServiceTest`: regras de entrada, saída, perda/avaria, empréstimo e devolução (parcial e total), bloqueio de saldo, idempotência e atraso, com repositórios simulados.
+- `FluxoAlmoxarifadoIntegracaoTest`: fluxos completos pela API (código automático, variações, fornecedores com preço, filtros, empréstimo e devolução, exclusões seguras, isolamento entre empresas, retiradas simultâneas).
+- `SegurancaEValidacaoIntegracaoTest`: login, permissões ADMIN/OPERADOR, mensagens de erro amigáveis, empréstimos atrasados e painel.
+
 ### Mudanças no banco (aplicadas automaticamente)
 
 - `materiais`: novas colunas `marca`, `modelo`, `ca`, `ativo`; a unicidade `(codigo, empresa_id)` foi trocada por `uk_material_variacao`.
