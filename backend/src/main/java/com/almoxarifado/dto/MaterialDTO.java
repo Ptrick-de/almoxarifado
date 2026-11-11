@@ -5,6 +5,7 @@ import com.almoxarifado.model.Material;
 import com.almoxarifado.model.MaterialFornecedor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,6 +38,9 @@ public class MaterialDTO {
     private final String marca;
     private final String modelo;
     private final String ca;
+    private final LocalDate caValidade;
+    private final boolean epi;
+    private final String caSituacao;
     private final String unidade;
     private final Integer quantidadeAtual;
     private final Integer quantidadeMinima;
@@ -60,6 +64,9 @@ public class MaterialDTO {
         this.marca = m.getMarca();
         this.modelo = m.getModelo();
         this.ca = m.getCa();
+        this.caValidade = m.getCaValidade();
+        this.epi = m.isEpi();
+        this.caSituacao = Material.situacaoDoCa(m.isEpi(), m.getCa(), m.getCaValidade(), LocalDate.now());
         this.unidade = m.getUnidade();
         this.quantidadeAtual = m.getQuantidadeAtual();
         this.quantidadeMinima = m.getQuantidadeMinima();
@@ -93,6 +100,9 @@ public class MaterialDTO {
     public String getMarca() { return marca; }
     public String getModelo() { return modelo; }
     public String getCa() { return ca; }
+    public LocalDate getCaValidade() { return caValidade; }
+    public boolean isEpi() { return epi; }
+    public String getCaSituacao() { return caSituacao; }
     public String getUnidade() { return unidade; }
     public Integer getQuantidadeAtual() { return quantidadeAtual; }
     public Integer getQuantidadeMinima() { return quantidadeMinima; }

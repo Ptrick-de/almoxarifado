@@ -16,6 +16,8 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
 
     List<Material> findAllByCodigoAndEmpresaId(String codigo, Long empresaId);
 
+    List<Material> findAllByCaAndEmpresaId(String ca, Long empresaId);
+
     boolean existsByCodigoAndEmpresaId(String codigo, Long empresaId);
 
     /** Lê o material com bloqueio de escrita: impede que duas operações simultâneas gastem o mesmo saldo. */

@@ -38,7 +38,7 @@ export default function DocTermo() {
               <tr><th>Material</th><td>{emp.material?.nome}</td></tr>
               <tr><th>Código</th><td>{emp.material?.codigo}</td></tr>
               <tr><th>Marca / modelo</th><td>{[emp.material?.marca, emp.material?.modelo].filter(Boolean).join(' / ') || '—'}</td></tr>
-              {emp.material?.ca && <tr><th>C.A.</th><td>{emp.material.ca}</td></tr>}
+              {emp.material?.ca && <tr><th>C.A.</th><td>{emp.material.ca}{emp.material.caValidade ? ` (validade ${formatarData(emp.material.caValidade)})` : ''}</td></tr>}
               <tr><th>Quantidade emprestada</th><td>{emp.quantidade} {emp.material?.unidade}</td></tr>
             </tbody>
           </table>

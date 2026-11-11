@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, mensagemDeErro } from '../api/api.js'
 import { useAuth } from '../auth/AuthContext.jsx'
-import { formatarDataHora } from '../utils/formatos.js'
+import { formatarData, formatarDataHora } from '../utils/formatos.js'
 
 // Ficha de Entrega de Material: gerada a partir da saída para consumo já registrada.
 export default function DocFicha() {
@@ -43,7 +43,7 @@ export default function DocFicha() {
               <tr><th>Material</th><td>{mov.material?.nome}</td></tr>
               <tr><th>Código</th><td>{mov.material?.codigo}</td></tr>
               <tr><th>Marca / modelo</th><td>{[mov.material?.marca, mov.material?.modelo].filter(Boolean).join(' / ') || '—'}</td></tr>
-              {mov.material?.ca && <tr><th>C.A.</th><td>{mov.material.ca}</td></tr>}
+              {mov.material?.ca && <tr><th>C.A.</th><td>{mov.material.ca}{mov.material.caValidade ? ` (validade ${formatarData(mov.material.caValidade)})` : ''}</td></tr>}
               <tr><th>Quantidade entregue</th><td>{mov.quantidade} {mov.material?.unidade}</td></tr>
               <tr><th>Recebido por</th><td>{mov.destinatario}</td></tr>
               <tr><th>Setor / departamento</th><td>{mov.setor || '—'}</td></tr>

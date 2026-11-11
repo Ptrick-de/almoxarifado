@@ -5,7 +5,7 @@ import AbasSecao, { ABAS_MATERIAIS } from '../components/AbasSecao.jsx'
 import Filtros from '../components/Filtros.jsx'
 import ConsultaMaterialModal from '../components/ConsultaMaterialModal.jsx'
 import { useConfirmacao } from '../components/ConfirmDialog.jsx'
-import { moeda, SITUACOES_MATERIAL } from '../utils/formatos.js'
+import { moeda, SITUACOES_MATERIAL, SITUACOES_CA } from '../utils/formatos.js'
 
 const UNIDADES = [
   'UNIDADE', 'CAIXA', 'PACOTE', 'FRASCO', 'PAR', 'RESMA', 'ROLO', 'METRO',
@@ -13,7 +13,7 @@ const UNIDADES = [
 ]
 
 const VAZIO = {
-  nome: '', descricao: '', marca: '', modelo: '', ca: '', unidade: 'UNIDADE', quantidadeAtual: 0,
+  nome: '', descricao: '', marca: '', modelo: '', ca: '', caValidade: '', epi: false, unidade: 'UNIDADE', quantidadeAtual: 0,
   quantidadeMinima: 0, precoUnitario: '', localizacao: '', categoriaId: '', ativo: true,
   codigoBase: '', fornecedores: [], // [{ fornecedorId, precoUnitario }]
 }
@@ -92,6 +92,8 @@ export default function Materiais() {
       marca: m.marca || '',
       modelo: m.modelo || '',
       ca: m.ca || '',
+      caValidade: m.caValidade || '',
+      epi: !!m.epi,
       unidade: m.unidade,
       quantidadeAtual: m.quantidadeAtual,
       quantidadeMinima: m.quantidadeMinima,
@@ -169,6 +171,8 @@ export default function Materiais() {
       marca: form.marca,
       modelo: form.modelo,
       ca: form.ca,
+      caValidade: form.ca.trim() ? (form.caValidade || null) : null,
+      epi: form.epi || !!form.ca.trim(),
       unidade: form.unidade,
       quantidadeAtual: Number(form.quantidadeAtual),
       quantidadeMinima: Number(form.quantidadeMinima),
@@ -282,7 +286,12 @@ export default function Materiais() {
                           <small>{m.categoria?.nome || 'Sem categoria'}{m.localizacao ? ` · ${m.localizacao}` : ''}</small>
                         </td>
                         <td>{[m.marca, m.modelo].filter(Boolean).join(' / ') || '—'}</td>
-                        <td>{m.ca || '—'}</td>
+                        <td>
+                          {m.ca || '—'}
+                          {SITUACOES_CA[m.caSituacao] && (
+                            <small><span className={`badge ${SITUACOES_CA[m.caSituacao].classe}`}>{SITUACOES_CA[m.caSituacao].label}</span></small>
+                          )}
+                        </td>
                         <td className="linha-material">
                           {m.fornecedores.length === 0 ? '—' : m.fornecedores.map((f) => (
                             <span key={f.fornecedorId} style={{ display: 'block' }}>
@@ -343,6 +352,11 @@ export default function Materiais() {
             </div>
 
             <div className="form-section">Marca, modelo e C.A.</div>
+            <label className="check-linha">
+              <input type="checkbox" checked={form.epi || !!form.ca.trim()} disabled={!!form.ca.trim()}
+                     onChange={(e) => setForm({ ...form, epi: e.target.checked })} />
+              É EPI (Equipamento de Proteção Individual) — exige C.A. e validade
+            </label>
             <div className="form-grid">
               <div className="field">
                 <label>Marca</label>
@@ -354,8 +368,16 @@ export default function Materiais() {
               </div>
               <div className="field">
                 <label>C.A. (Certificado de Aprovação)</label>
-                <input maxLength={30} placeholder="Quando aplicável (EPIs)" value={form.ca} onChange={(e) => setForm({ ...form, ca: e.target.value })} />
+                <input maxLength={12} inputMode="numeric" placeholder="Somente números (ex.: 12345)"
+                       required={form.epi} value={form.ca} onChange={(e) => setForm({ ...form, ca: e.target.value })} />
               </div>
+              {(form.epi || form.ca.trim()) && (
+                <div className="field">
+                  <label>Validade do C.A. *</label>
+                  <input type="date" required value={form.caValidade}
+                         onChange={(e) => setForm({ ...form, caValidade: e.target.value })} />
+                </div>
+              )}
             </div>
 
             <div className="form-section">Estoque</div>

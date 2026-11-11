@@ -75,6 +75,81 @@ class FluxoAlmoxarifadoIntegracaoTest {
         tokenB = login("usuario.b");
     }
 
+    // ------------------------------------------------------------------ C.A. (EPI)
+
+    private MvcResult criarEsperando(Map<String, Object> corpo, int status) throws Exception {
+        return mvc.perform(post("/api/materiais").header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(corpo)))
+                .andExpect(status().is(status)).andReturn();
+    }
+
+    @Test
+    void caAceitaFormatosComunsENormalizaParaSoNumeros() throws Exception {
+        JsonNode m = criarMaterial(tokenA, "Capacete", "Marca A", "", "C.A. 12.345", 2, null);
+        assertThat(m.get("ca").asText()).isEqualTo("12345");
+        assertThat(m.get("epi").asBoolean()).isTrue();
+        assertThat(m.get("caSituacao").asText()).isEqualTo("VALIDO");
+    }
+
+    @Test
+    void caComLetrasOuMuitosDigitosERejeitado() throws Exception {
+        MvcResult r = criarEsperando(corpoMaterialMapa("Luva", "Marca A", "", "AB123", 1, null), 400);
+        assertThat(ler(r).get("erro").asText()).contains("C.A. inválido");
+        criarEsperando(corpoMaterialMapa("Luva", "Marca A", "", "1234567", 1, null), 400);
+    }
+
+    @Test
+    void caExigeValidadeEEpiExigeCa() throws Exception {
+        Map<String, Object> semValidade = corpoMaterialMapa("Bota", "Marca A", "", "55555", 1, null);
+        semValidade.remove("caValidade");
+        assertThat(ler(criarEsperando(semValidade, 400)).get("erro").asText()).contains("validade");
+
+        Map<String, Object> epiSemCa = corpoMaterialMapa("Bota", "Marca A", "", "", 1, null);
+        epiSemCa.put("epi", true);
+        assertThat(ler(criarEsperando(epiSemCa, 400)).get("erro").asText()).contains("precisa ter o número do C.A.");
+    }
+
+    @Test
+    void mesmoCaEmOutraMarcaERejeitadoEEmMesmaMarcaCompartilhaValidade() throws Exception {
+        criarMaterial(tokenA, "Luva", "Marca A", "M1", "11111", 1, null);
+
+        MvcResult r = criarEsperando(corpoMaterialMapa("Óculos", "Marca B", "", "11111", 1, null), 400);
+        assertThat(ler(r).get("erro").asText()).contains("pertence a um único fabricante");
+
+        Map<String, Object> outroTamanho = corpoMaterialMapa("Luva", "Marca A", "M2", "11111", 1, null);
+        outroTamanho.put("caValidade", java.time.LocalDate.now().plusYears(2).toString());
+        criarEsperando(outroTamanho, 200);
+        List<Material> todos = materialRepository.findAllByCaAndEmpresaId("11111", empresaId("usuario.a"));
+        assertThat(todos).hasSize(2);
+        assertThat(todos.get(0).getCaValidade()).isEqualTo(todos.get(1).getCaValidade());
+    }
+
+    @Test
+    void epiComCaVencidoNaoPodeSerEntregueNemEmprestadoMasAindaRecebeEntrada() throws Exception {
+        Map<String, Object> corpo = corpoMaterialMapa("Protetor auricular", "Marca A", "", "22222", 5, null);
+        corpo.put("caValidade", java.time.LocalDate.now().minusDays(1).toString());
+        JsonNode m = ler(criarEsperando(corpo, 200));
+        long id = m.get("id").asLong();
+        assertThat(m.get("caSituacao").asText()).isEqualTo("VENCIDO");
+
+        MvcResult saida = movimentar(tokenA, id, "SAIDA", 1, "Maria", null).andExpect(status().isBadRequest()).andReturn();
+        assertThat(ler(saida).get("erro").asText()).contains("C.A. 22222").contains("vencido");
+
+        mvc.perform(post("/api/emprestimos").header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(emprestimoMapa(id, 1))))
+                .andExpect(status().isBadRequest());
+
+        movimentar(tokenA, id, "ENTRADA", 2, null, null).andExpect(status().isOk());
+        assertThat(saldo(tokenA, id)).isEqualTo(7);
+    }
+
+    @Test
+    void caQueVenceEmAte30DiasApareceComoVenceEmBreve() throws Exception {
+        Map<String, Object> corpo = corpoMaterialMapa("Máscara", "Marca A", "", "33333", 1, null);
+        corpo.put("caValidade", java.time.LocalDate.now().plusDays(10).toString());
+        assertThat(ler(criarEsperando(corpo, 200)).get("caSituacao").asText()).isEqualTo("VENCE_EM_BREVE");
+    }
+
     // ------------------------------------------------------------------ cadastro e códigos
 
     @Test
@@ -469,6 +544,7 @@ class FluxoAlmoxarifadoIntegracaoTest {
         m.put("marca", marca);
         m.put("modelo", modelo);
         m.put("ca", ca);
+        if (!ca.isEmpty()) m.put("caValidade", java.time.LocalDate.now().plusYears(1).toString());
         m.put("unidade", "UNIDADE");
         m.put("quantidadeAtual", saldo);
         m.put("quantidadeMinima", 1);

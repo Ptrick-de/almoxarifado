@@ -172,3 +172,12 @@ O sistema não usa e-mail, então a recuperação funciona assim:
 - **Administrador esqueceu a própria senha** (e não há outro admin): gere um hash bcrypt de uma nova senha e atualize direto no banco:
   `UPDATE usuarios SET senha = '<hash bcrypt>' WHERE usuario = 'admin1';`
   Dica: mantenha sempre pelo menos dois administradores por empresa.
+
+## C.A. (Certificado de Aprovação) e EPIs
+
+- O C.A. aceita só números (até 6 dígitos); formatos como `C.A. 12.345` são normalizados para `12345`.
+- Informar um C.A. marca o material como **EPI**; todo EPI exige C.A. e **validade** do C.A.
+- Um C.A. pertence a um único fabricante: o mesmo número em outra marca é recusado. Variações com o mesmo C.A. compartilham a validade.
+- Situação do C.A.: Válido, Vence em breve (até 30 dias), Vencido ou Sem validade (cadastros antigos).
+- EPI com C.A. **vencido** não pode sair para consumo nem ser emprestado (entradas, perdas e devoluções continuam permitidas).
+- Banco: novas colunas `materiais.epi` e `materiais.ca_validade` (criadas pelo Hibernate); materiais que já tinham C.A. são marcados como EPI na migração.

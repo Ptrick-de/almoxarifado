@@ -62,6 +62,7 @@ public class MovimentacaoService {
         }
 
         exigirAtivo(material);
+        if (tipo == TipoMovimentacao.SAIDA) exigirCaValido(material);
 
         String destinatario = limpar(req.getDestinatario());
         String observacao = limpar(req.getObservacao());
@@ -123,6 +124,7 @@ public class MovimentacaoService {
         }
 
         exigirAtivo(material);
+        exigirCaValido(material);
 
         LocalDate hoje = LocalDate.now();
         LocalDate data = req.getDataEmprestimo() != null ? req.getDataEmprestimo() : hoje;
@@ -241,6 +243,15 @@ public class MovimentacaoService {
         }
         material.setQuantidadeAtual(saldo);
         mov.setSaldoApos(saldo);
+    }
+
+    /** EPI com C.A. vencido não pode ser entregue nem emprestado (NR-6). Entradas, perdas e devoluções continuam permitidas. */
+    private void exigirCaValido(Material material) {
+        if (material.isCaVencido()) {
+            throw new RegraDeNegocioException("O C.A. " + material.getCa() + " de " + descricaoCurta(material)
+                    + " está vencido (validade " + material.getCaValidade().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    + "). EPI com C.A. vencido não pode ser entregue. Atualize a validade no cadastro, se o C.A. foi renovado.");
+        }
     }
 
     private void exigirAtivo(Material material) {

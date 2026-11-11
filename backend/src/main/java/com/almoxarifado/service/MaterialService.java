@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -141,12 +142,14 @@ public class MaterialService {
         material.setEmpresa(empresa);
         material.setCodigo(codigo);
         validarVariacaoUnica(codigo, req.getMarca(), req.getModelo(), req.getCa(), null, empresaId);
+        validarCa(req, null, empresaId);
         aplicarDados(material, req, categoria, nome);
 
         int saldoInicial = req.getQuantidadeAtual() == null ? 0 : req.getQuantidadeAtual();
         material.setQuantidadeAtual(saldoInicial);
         material.setPrecoUnitario(precoReferencia(req, novosVinculos));
         Material salvo = materialRepository.save(material);
+        sincronizarValidadeDoCa(salvo, empresaId);
 
         for (MaterialFornecedor v : novosVinculos) {
             v.setMaterial(salvo);
@@ -178,10 +181,12 @@ public class MaterialService {
 
         // O código identifica o produto e nunca muda; o saldo só muda por movimentações.
         validarVariacaoUnica(material.getCodigo(), req.getMarca(), req.getModelo(), req.getCa(), material.getId(), empresaId);
+        validarCa(req, material.getId(), empresaId);
         aplicarDados(material, req, categoria, req.getNome().trim());
         if (req.getAtivo() != null) material.setAtivo(req.getAtivo());
         if (req.getPrecoUnitario() != null) material.setPrecoUnitario(req.getPrecoUnitario());
         materialRepository.save(material);
+        sincronizarValidadeDoCa(material, empresaId);
 
         sincronizarVinculos(material, desejados);
         return obter(material.getId(), empresaId);
@@ -231,11 +236,60 @@ public class MaterialService {
         return String.format("MAT-%03d", maior + 1);
     }
 
+    // ------------------------------------------------------------------
+    // C.A. (Certificado de Aprovação de EPI)
+    // ------------------------------------------------------------------
+
+    /** Aceita "12345", "C.A. 12.345", "CA 12345"; devolve só os dígitos ("" se vazio). Valida em {@link #validarCa}. */
+    static String normalizarCa(String bruto) {
+        if (bruto == null) return "";
+        String s = bruto.trim().replaceAll("(?i)^c\\.?\\s*a\\.?\\s*", "");
+        return s.replaceAll("[\\s.]", "");
+    }
+
+    private void validarCa(MaterialRequest req, Long idAtual, Long empresaId) {
+        String ca = normalizarCa(req.getCa());
+        boolean epi = Boolean.TRUE.equals(req.getEpi());
+        if (ca.isEmpty()) {
+            if (epi) {
+                throw new RegraDeNegocioException("Todo EPI precisa ter o número do C.A. Informe o C.A. ou desmarque \"É EPI\".");
+            }
+            return;
+        }
+        if (!ca.matches("\\d{1,6}")) {
+            throw new RegraDeNegocioException("C.A. inválido: use apenas números, com até 6 dígitos (ex.: 12345).");
+        }
+        if (req.getCaValidade() == null) {
+            throw new RegraDeNegocioException("Informe a validade do C.A. (consulte o número no CAEPI do Ministério do Trabalho).");
+        }
+        String marca = req.getMarca() == null ? "" : req.getMarca().trim();
+        for (Material outro : materialRepository.findAllByCaAndEmpresaId(ca, empresaId)) {
+            if (idAtual != null && outro.getId().equals(idAtual)) continue;
+            if (!outro.getMarca().equalsIgnoreCase(marca)) {
+                throw new RegraDeNegocioException("O C.A. " + ca + " já está cadastrado para a marca \""
+                        + (outro.getMarca().isEmpty() ? "(sem marca)" : outro.getMarca())
+                        + "\" (" + outro.getNome() + "). Um C.A. pertence a um único fabricante; confira o número ou a marca.");
+            }
+        }
+    }
+
+    /** A validade é do C.A.: ao salvar, as demais variações com o mesmo C.A. recebem a mesma data. */
+    private void sincronizarValidadeDoCa(Material material, Long empresaId) {
+        if (material.getCa().isEmpty()) return;
+        for (Material outro : materialRepository.findAllByCaAndEmpresaId(material.getCa(), empresaId)) {
+            if (!outro.getId().equals(material.getId())
+                    && !Objects.equals(outro.getCaValidade(), material.getCaValidade())) {
+                outro.setCaValidade(material.getCaValidade());
+                materialRepository.save(outro);
+            }
+        }
+    }
+
     /** Deve ser chamado ANTES de alterar a entidade gerenciada, para não disparar flush com dados duplicados. */
     private void validarVariacaoUnica(String codigo, String marca, String modelo, String ca, Long idAtual, Long empresaId) {
         String m1 = marca == null ? "" : marca.trim();
         String m2 = modelo == null ? "" : modelo.trim();
-        String m3 = ca == null ? "" : ca.trim();
+        String m3 = normalizarCa(ca);
         for (Material outro : materialRepository.findAllByCodigoAndEmpresaId(codigo, empresaId)) {
             if (idAtual != null && outro.getId().equals(idAtual)) continue;
             if (outro.getMarca().equalsIgnoreCase(m1)
@@ -254,7 +308,10 @@ public class MaterialService {
         m.setDescricao(limpar(req.getDescricao()));
         m.setMarca(req.getMarca() == null ? "" : req.getMarca().trim());
         m.setModelo(req.getModelo() == null ? "" : req.getModelo().trim());
-        m.setCa(req.getCa() == null ? "" : req.getCa().trim());
+        String ca = normalizarCa(req.getCa());
+        m.setCa(ca);
+        m.setEpi(Boolean.TRUE.equals(req.getEpi()) || !ca.isEmpty());
+        m.setCaValidade(ca.isEmpty() ? null : req.getCaValidade());
         m.setUnidade(req.getUnidade().trim());
         m.setQuantidadeMinima(req.getQuantidadeMinima() == null ? 0 : req.getQuantidadeMinima());
         m.setLocalizacao(limpar(req.getLocalizacao()));

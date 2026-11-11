@@ -7,6 +7,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,10 @@ public class MaterialRequest {
 
     @Size(max = 30, message = "C.A. deve ter no máximo 30 caracteres")
     private String ca;
+
+    private LocalDate caValidade;
+
+    private Boolean epi;
 
     @NotBlank(message = "Unidade de medida é obrigatória")
     private String unidade;
@@ -84,6 +89,12 @@ public class MaterialRequest {
 
     public String getCa() { return ca; }
     public void setCa(String ca) { this.ca = ca; }
+
+    public LocalDate getCaValidade() { return caValidade; }
+    public void setCaValidade(LocalDate caValidade) { this.caValidade = caValidade; }
+
+    public Boolean getEpi() { return epi; }
+    public void setEpi(Boolean epi) { this.epi = epi; }
 
     public String getUnidade() { return unidade; }
     public void setUnidade(String unidade) { this.unidade = unidade; }

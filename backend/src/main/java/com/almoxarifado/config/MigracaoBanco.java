@@ -39,9 +39,16 @@ public class MigracaoBanco implements ApplicationRunner {
             jdbc.update("UPDATE materiais SET marca = '' WHERE marca IS NULL");
             jdbc.update("UPDATE materiais SET modelo = '' WHERE modelo IS NULL");
             jdbc.update("UPDATE materiais SET ca = '' WHERE ca IS NULL");
+            marcarEpisExistentes();
         } catch (Exception e) {
             log.error("Falha ao migrar o banco de dados. Verifique o log e a conexão com o MySQL.", e);
         }
+    }
+
+    /** Materiais que já tinham C.A. antes do campo "É EPI" existir passam a ser EPIs. */
+    private void marcarEpisExistentes() {
+        int n = jdbc.update("UPDATE materiais SET epi = TRUE WHERE ca <> '' AND (epi IS NULL OR epi = FALSE)");
+        if (n > 0) log.info("{} material(is) com C.A. marcado(s) como EPI", n);
     }
 
     /** Remove UNIQUE(codigo, empresa_id): o código agora é do produto e se repete entre suas variações. */

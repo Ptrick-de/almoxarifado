@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -41,6 +42,13 @@ public class Material {
 
     @Column(nullable = false, length = 30, columnDefinition = "varchar(30) not null default ''")
     private String ca = "";
+
+    /** EPI exige C.A.; a validade pertence ao C.A. (todas as variações com o mesmo C.A. compartilham a data). */
+    @Column(name = "ca_validade")
+    private LocalDate caValidade;
+
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean epi = false;
 
     @NotBlank(message = "Unidade de medida é obrigatória")
     private String unidade;
@@ -98,6 +106,26 @@ public class Material {
 
     public String getCa() { return ca; }
     public void setCa(String ca) { this.ca = ca == null ? "" : ca; }
+
+    public LocalDate getCaValidade() { return caValidade; }
+    public void setCaValidade(LocalDate caValidade) { this.caValidade = caValidade; }
+
+    public boolean isEpi() { return epi; }
+    public void setEpi(boolean epi) { this.epi = epi; }
+
+    /** Situação do C.A.: NAO_SE_APLICA, SEM_VALIDADE, VALIDO, VENCE_EM_BREVE (até 30 dias) ou VENCIDO. */
+    public static String situacaoDoCa(boolean epi, String ca, LocalDate validade, LocalDate hoje) {
+        if (!epi && (ca == null || ca.isEmpty())) return "NAO_SE_APLICA";
+        if (validade == null) return "SEM_VALIDADE";
+        if (validade.isBefore(hoje)) return "VENCIDO";
+        if (!validade.isAfter(hoje.plusDays(30))) return "VENCE_EM_BREVE";
+        return "VALIDO";
+    }
+
+    @Transient
+    public boolean isCaVencido() {
+        return "VENCIDO".equals(situacaoDoCa(epi, ca, caValidade, LocalDate.now()));
+    }
 
     public String getUnidade() { return unidade; }
     public void setUnidade(String unidade) { this.unidade = unidade; }

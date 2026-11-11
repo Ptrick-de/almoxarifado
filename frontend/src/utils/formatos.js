@@ -44,6 +44,13 @@ export const SITUACOES_MATERIAL = {
   INDISPONIVEL: { label: 'Indisponível', classe: 'badge-muted' },
 }
 
+export const SITUACOES_CA = {
+  VALIDO: { label: 'Válido', classe: 'badge-ok' },
+  VENCE_EM_BREVE: { label: 'Vence em breve', classe: 'badge-low' },
+  VENCIDO: { label: 'Vencido', classe: 'badge-out' },
+  SEM_VALIDADE: { label: 'Sem validade', classe: 'badge-muted' },
+}
+
 export const TIPOS_MOVIMENTACAO = {
   ENTRADA: { label: 'Entrada', classe: 'badge-entrada' },
   SAIDA: { label: 'Saída (consumo)', classe: 'badge-saida' },

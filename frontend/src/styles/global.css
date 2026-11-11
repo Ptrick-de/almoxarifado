@@ -823,3 +823,6 @@ tbody tr:hover { background: #FBFAF6; }
 }
 .sidebar-nav .tree-child:hover { color: #fff; background: #262B2F; }
 .sidebar-nav .tree-child.active { color: #fff; background: #2C3136; font-weight: 600; border-left: none; }
+
+.check-linha { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; margin: 4px 0 14px; padding: 0; }
+.check-linha input { width: auto; }
