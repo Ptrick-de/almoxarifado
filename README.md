@@ -181,3 +181,9 @@ O sistema não usa e-mail, então a recuperação funciona assim:
 - Situação do C.A.: Válido, Vence em breve (até 30 dias), Vencido ou Sem validade (cadastros antigos).
 - EPI com C.A. **vencido** não pode sair para consumo nem ser emprestado (entradas, perdas e devoluções continuam permitidas).
 - Banco: novas colunas `materiais.epi` e `materiais.ca_validade` (criadas pelo Hibernate); materiais que já tinham C.A. são marcados como EPI na migração.
+
+## Exportação para Excel
+
+Os três relatórios (posição de estoque, movimentações e empréstimos) têm **Exportar Excel** (.xlsx formatado) além do CSV:
+título e filtros aplicados no topo, cabeçalho colorido com filtro automático e linha fixa, datas e números de verdade (dá para ordenar e somar), valores em R$, tipo/situação com cores, linhas de total e configuração de impressão em paisagem.
+A biblioteca `exceljs` só é carregada quando alguém clica em exportar. Depois de atualizar o projeto, rode `npm install` na pasta `frontend`.
