@@ -18,6 +18,9 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    /** Cabeçalho da resposta que traz o token renovado (exposto no CORS para o frontend ler). */
+    public static final String HEADER_NOVO_TOKEN = "X-Novo-Token";
+
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
 
@@ -50,6 +53,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    // Sessão deslizante: quem está usando o sistema ganha um token novo; quem parou, deixa o token vencer.
+                    if (jwtService.deveRenovar(token)) {
+                        response.setHeader(HEADER_NOVO_TOKEN, jwtService.gerarToken(usuario));
+                    }
                 }
             }
         } catch (Exception ex) {

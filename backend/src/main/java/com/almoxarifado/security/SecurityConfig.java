@@ -94,6 +94,7 @@ public class SecurityConfig {
         configuracao.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
         configuracao.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuracao.setAllowedHeaders(List.of("*"));
+        configuracao.setExposedHeaders(List.of(JwtAuthenticationFilter.HEADER_NOVO_TOKEN));
         configuracao.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

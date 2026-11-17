@@ -1,5 +1,6 @@
 const BASE_URL = 'http://localhost:8080/api'
-const CHAVE_TOKEN = 'almoxarifado_token'
+export const CHAVE_TOKEN = 'almoxarifado_token'
+const CHAVE_AVISO_LOGIN = 'almoxarifado_aviso_login'
 
 export function getToken() {
   return localStorage.getItem(CHAVE_TOKEN)
@@ -8,6 +9,21 @@ export function getToken() {
 export function setToken(token) {
   if (token) localStorage.setItem(CHAVE_TOKEN, token)
   else localStorage.removeItem(CHAVE_TOKEN)
+}
+
+// Mensagem mostrada na tela de login depois que a sessão foi encerrada (inatividade, expiração...).
+export function guardarAvisoLogin(texto) {
+  try { sessionStorage.setItem(CHAVE_AVISO_LOGIN, texto) } catch (_) { /* sem armazenamento: sem aviso */ }
+}
+
+export function lerAvisoLogin() {
+  try {
+    const texto = sessionStorage.getItem(CHAVE_AVISO_LOGIN)
+    sessionStorage.removeItem(CHAVE_AVISO_LOGIN)
+    return texto || ''
+  } catch (_) {
+    return ''
+  }
 }
 
 // Disparado quando a API responde 401 (token ausente/expirado), para que o
@@ -67,7 +83,12 @@ async function requisitar(caminho, opcoes = {}) {
     throw new ApiError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.', 0)
   }
 
+  // Sessão deslizante: o servidor manda um token novo enquanto a pessoa está usando o sistema.
+  const tokenRenovado = resposta.headers.get('X-Novo-Token')
+  if (tokenRenovado && getToken()) setToken(tokenRenovado)
+
   if (resposta.status === 401) {
+    if (token) guardarAvisoLogin('Sua sessão expirou. Entre novamente para continuar.')
     setToken(null)
     window.dispatchEvent(new Event(SESSAO_EXPIRADA_EVENTO))
     throw new ApiError('Sessão expirada. Faça login novamente.', 401)

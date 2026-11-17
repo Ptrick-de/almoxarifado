@@ -77,6 +77,24 @@ class SegurancaEValidacaoIntegracaoTest {
     // ------------------------------------------------------------------ login e permissões
 
     @Test
+    void sessaoDeslizanteDevolveTokenNovoQueContinuaValendo() throws Exception {
+        // No perfil de teste todo token é renovado a cada uso (jwt.renovar-apos-minutos=0).
+        MvcResult r = mvc.perform(get("/api/materiais").header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isOk()).andReturn();
+        String novoToken = r.getResponse().getHeader("X-Novo-Token");
+        assertThat(novoToken).isNotBlank();
+
+        mvc.perform(get("/api/materiais").header("Authorization", "Bearer " + novoToken)).andExpect(status().isOk());
+    }
+
+    @Test
+    void semTokenOuComTokenInvalidoNaoRecebeTokenNovoEFicaSemAcesso() throws Exception {
+        MvcResult r = mvc.perform(get("/api/materiais").header("Authorization", "Bearer token.invalido.qualquer"))
+                .andExpect(status().isUnauthorized()).andReturn();
+        assertThat(r.getResponse().getHeader("X-Novo-Token")).isNull();
+    }
+
+    @Test
     void loginComSenhaErradaMostraMensagemAmigavel() throws Exception {
         MvcResult r = tentarLogin("admin.a", "senha-errada").andExpect(status().isBadRequest()).andReturn();
         assertThat(ler(r).get("erro").asText()).isEqualTo("Usuário ou senha inválidos");

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../api/api.js'
-import { getToken, setToken, SESSAO_EXPIRADA_EVENTO } from '../api/api.js'
+import { getToken, setToken, guardarAvisoLogin, CHAVE_TOKEN, SESSAO_EXPIRADA_EVENTO } from '../api/api.js'
 
 const AuthContext = createContext(null)
 
@@ -31,8 +31,16 @@ export function AuthProvider({ children }) {
     iniciar()
 
     function aoExpirar() { setUsuario(null) }
+    // Saiu (ou foi desconectado) em outra aba do mesmo navegador: esta aba também deve sair.
+    function aoMudarArmazenamento(e) {
+      if (e.key === CHAVE_TOKEN && !e.newValue) setUsuario(null)
+    }
     window.addEventListener(SESSAO_EXPIRADA_EVENTO, aoExpirar)
-    return () => window.removeEventListener(SESSAO_EXPIRADA_EVENTO, aoExpirar)
+    window.addEventListener('storage', aoMudarArmazenamento)
+    return () => {
+      window.removeEventListener(SESSAO_EXPIRADA_EVENTO, aoExpirar)
+      window.removeEventListener('storage', aoMudarArmazenamento)
+    }
   }, [])
 
   async function login(usuario, senha) {
@@ -47,7 +55,9 @@ export function AuthProvider({ children }) {
     })
   }
 
-  function logout() {
+  // motivo (opcional): texto exibido na tela de login, ex.: "encerrada por inatividade".
+  function logout(motivo) {
+    if (motivo) guardarAvisoLogin(motivo)
     setToken(null)
     setUsuario(null)
   }

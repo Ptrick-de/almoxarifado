@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { mensagemDeErro } from '../api/api.js'
+import { lerAvisoLogin, mensagemDeErro } from '../api/api.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 export default function Login() {
@@ -11,6 +11,7 @@ export default function Login() {
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [esqueci, setEsqueci] = useState(false)
+  const [aviso] = useState(() => lerAvisoLogin())
 
   if (autenticado) return <Navigate to="/" replace />
 
@@ -34,6 +35,7 @@ export default function Login() {
         <div style={styles.titulo}>Acessar sistema</div>
 
         <form onSubmit={entrar} style={{ marginTop: 24 }}>
+          {aviso && !erro && <div className="info-banner" style={{ margin: '0 0 16px' }}>{aviso}</div>}
           {erro && <div className="error-banner">{erro}</div>}
 
           <div className="field" style={{ marginBottom: 16 }}>

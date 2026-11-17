@@ -187,3 +187,10 @@ O sistema não usa e-mail, então a recuperação funciona assim:
 Os três relatórios (posição de estoque, movimentações e empréstimos) têm **Exportar Excel** (.xlsx formatado) além do CSV:
 título e filtros aplicados no topo, cabeçalho colorido com filtro automático e linha fixa, datas e números de verdade (dá para ordenar e somar), valores em R$, tipo/situação com cores, linhas de total e configuração de impressão em paisagem.
 A biblioteca `exceljs` só é carregada quando alguém clica em exportar. Depois de atualizar o projeto, rode `npm install` na pasta `frontend`.
+
+## Desconexão por inatividade
+
+- **No navegador:** depois de **15 minutos** sem mexer (mouse, teclado, rolagem ou toque), a sessão é encerrada. Um minuto antes aparece o aviso "Você ainda está aí?" com contagem regressiva e o botão **Continuar conectado**. A atividade vale para todas as abas do mesmo navegador, e computador que "dormiu" é desconectado ao acordar.
+  O tempo pode ser mudado criando `frontend/.env` com `VITE_INATIVIDADE_MINUTOS=10`.
+- **No servidor:** o token de login vale **30 minutos** (`jwt.expiracao-minutos`) e é trocado por um novo a cada uso (cabeçalho `X-Novo-Token`, a cada 5 minutos de uso). Quem para de usar tem o token vencido mesmo que o navegador seja manipulado.
+- Ao ser desconectado, o login mostra "Sua sessão foi encerrada por inatividade".

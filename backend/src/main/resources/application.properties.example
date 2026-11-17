@@ -32,4 +32,6 @@ spring.sql.init.mode=always
 # e prefira definir via variavel de ambiente JWT_SECRET em vez de deixar no arquivo.
 # ---------------------------------------------------------------------
 jwt.secret=${JWT_SECRET:troque-este-segredo-por-uma-chave-longa-e-aleatoria-antes-de-usar-em-producao}
-jwt.expiracao-horas=8
+# Inatividade: o token vale 30 min e é renovado a cada uso; quem fica parado mais que isso precisa entrar de novo.
+jwt.expiracao-minutos=30
+jwt.renovar-apos-minutos=5

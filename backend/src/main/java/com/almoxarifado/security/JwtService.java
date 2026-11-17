@@ -18,8 +18,13 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String segredo;
 
-    @Value("${jwt.expiracao-horas:8}")
-    private long expiracaoHoras;
+    /** Tempo de vida de cada token. Como o token é renovado a cada uso, na prática é o tempo máximo de inatividade. */
+    @Value("${jwt.expiracao-minutos:30}")
+    private long expiracaoMinutos;
+
+    /** Um token com mais de X minutos é trocado por um novo na resposta seguinte (sessão deslizante). */
+    @Value("${jwt.renovar-apos-minutos:5}")
+    private long renovarAposMinutos;
 
     private SecretKey chave() {
         // A chave precisa ter pelo menos 256 bits para o algoritmo HS256.
@@ -33,7 +38,7 @@ public class JwtService {
 
     public String gerarToken(UserDetails usuario) {
         Date agora = new Date();
-        Date expiracao = new Date(agora.getTime() + expiracaoHoras * 3600_000);
+        Date expiracao = new Date(agora.getTime() + expiracaoMinutos * 60_000);
 
         return Jwts.builder()
                 .subject(usuario.getUsername())
@@ -41,6 +46,12 @@ public class JwtService {
                 .expiration(expiracao)
                 .signWith(chave())
                 .compact();
+    }
+
+    /** Indica se o token já tem idade suficiente para ser trocado por um novo (renovação a cada uso). */
+    public boolean deveRenovar(String token) {
+        Date emitidoEm = extrairClaim(token, Claims::getIssuedAt);
+        return emitidoEm.getTime() + renovarAposMinutos * 60_000 <= System.currentTimeMillis();
     }
 
     public String extrairUsuario(String token) {

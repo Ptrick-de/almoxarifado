@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { api, mensagemDeErro } from '../api/api.js'
 import Modal from './Modal.jsx'
+import InatividadeAviso from './InatividadeAviso.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 // Menu em árvore (como um explorador de arquivos). Cada grupo abre/fecha pela setinha;
@@ -178,6 +179,7 @@ export default function Layout() {
           </div>
         </div>
       </aside>
+      <InatividadeAviso />
       <div className="main-area">
         <Outlet />
       </div>
